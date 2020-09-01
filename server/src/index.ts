@@ -14,21 +14,25 @@ import { HelloResolver } from "./resolvers/hello";
 import { PostResolver } from "./resolvers/post";
 import { UserResolver } from "./resolvers/user";
 import { MyContext } from "./types";
+import path from "path";
 
 const RedisStore = connectRedis(session);
 const redis = new Redis();
 
 const main = async () => {
-     await createConnection({
-        type: 'postgres',
-        database: 'creddit2',
-        username: 'postgres',
-        password: 'postgres',
+    const conn = await createConnection({
+        type: "postgres",
+        database: "creddit2",
+        username: "postgres",
+        password: "postgres",
         logging: true,
         synchronize: true,
-        entities: [Post, User]
+        migrations: [path.join(__dirname, "./migrations/*")],
+        entities: [Post, User],
     });
-    
+
+    await conn.runMigrations();
+
     const app = express();
 
     app.use(

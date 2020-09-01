@@ -122,11 +122,11 @@ export class UserResolver {
     @Query(() => User, { nullable: true })
     me(@Ctx() { req }: MyContext) {
         //not logged in
-        if (!req.session!.userId) {
+        if (!req.session?.userId) {
             return null;
         }
 
-        return User.findOne(req.session?.id);
+        return User.findOne(req.session.userId);
     }
 
     @Mutation(() => UserResponse)
