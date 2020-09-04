@@ -15,6 +15,7 @@ import { PostResolver } from "./resolvers/post";
 import { UserResolver } from "./resolvers/user";
 import { MyContext } from "./types";
 import path from "path";
+import { Upvote } from "./entities/Upvote";
 
 const RedisStore = connectRedis(session);
 const redis = new Redis();
@@ -28,7 +29,7 @@ const main = async () => {
         logging: true,
         synchronize: true,
         migrations: [path.join(__dirname, "./migrations/*")],
-        entities: [Post, User],
+        entities: [Post, User, Upvote],
     });
 
     await conn.runMigrations();
