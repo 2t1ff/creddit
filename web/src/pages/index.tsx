@@ -1,25 +1,25 @@
-import { withUrqlClient } from "next-urql";
-import { createUrqlClient } from "../utils/createUrqlClient";
 import {
-	useDeletePostMutation,
-	useMeQuery,
-	usePostsQuery,
-} from "../generated/graphql";
-import { Layout } from "../components/Layout";
-import {
-	Link,
-	Stack,
 	Box,
-	Heading,
-	Text,
-	Flex,
-	Button,
-	IconButton,
+
+
+
+	Button, Flex, Heading, Link,
+	Stack,
+
+
+	Text
 } from "@chakra-ui/core";
+import { withUrqlClient } from "next-urql";
 import NextLink from "next/link";
 import { useState } from "react";
-import { UpvoteSection } from "../components/UpvoteSection";
 import { EditDeletePostButtons } from "../components/EditDeletePostButtons";
+import { Layout } from "../components/Layout";
+import { UpvoteSection } from "../components/UpvoteSection";
+import {
+	useMeQuery,
+	usePostsQuery
+} from "../generated/graphql";
+import { createUrqlClient } from "../utils/createUrqlClient";
 
 const Index = () => {
 	const [variables, setVariables] = useState({
@@ -30,8 +30,10 @@ const Index = () => {
 	const [{ data, fetching }] = usePostsQuery({
 		variables,
 	});
+
+
 	if (!fetching && !data) {
-		return <div>you got no posts!</div>;
+		return <Layout>	</Layout>;
 	}
 	return (
 		<Layout>

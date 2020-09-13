@@ -1,4 +1,5 @@
 import { ApolloServer } from "apollo-server-express";
+import "dotenv-safe/config";
 import connectRedis from "connect-redis";
 import cors from "cors";
 import express from "express";
@@ -16,60 +17,67 @@ import { UserResolver } from "./resolvers/user";
 import { MyContext } from "./types";
 import path from "path";
 import { Upvote } from "./entities/Upvote";
+import { createUserLoader } from "./utils/createUserLoader";
+import { createUpvoteLoader } from "./utils/createUpvoteLoader";
 
 const RedisStore = connectRedis(session);
-const redis = new Redis();
+const redis = new Redis(process.env.REDIS_URL);
 
 const main = async () => {
-    const conn = await createConnection({
-        type: "postgres",
-        database: "creddit2",
-        username: "postgres",
-        password: "postgres",
-        logging: true,
-        synchronize: true,
-        migrations: [path.join(__dirname, "./migrations/*")],
-        entities: [Post, User, Upvote],
-    });
+	const conn = await createConnection({
+		type: "postgres",
+		url: process.env.DATABASE_URL,
+		logging: true,
+		//synchronize: __prod__ ? false : true,
+		migrations: [path.join(__dirname, "./migrations/*")],
+		entities: [Post, User, Upvote],
+	});
 
-    await conn.runMigrations();
+	await conn.runMigrations();
 
-    const app = express();
+	const app = express();
+	app.set("trust proxy",1)
+	app.use(
+		cors({
+			origin: process.env.CORS_ORIGIN,
+			credentials: true,
+		})
+	);
+	app.use(
+		session({
+			name: COOKIE_NAME,
+			store: new RedisStore({ client: redis, disableTouch: true }),
+			cookie: {
+				maxAge: 1000 * 60 * 60 * 24 * 365 * 10, //10 years
+				httpOnly: true,
+				secure: __prod__,
+				sameSite: "lax",
+				domain: __prod__ ? ".nosimpsallowed.com" : undefined
+			},
+			saveUninitialized: false,
+			secret: process.env.SECRET,
+			resave: false,
+		})
+	);
 
-    app.use(
-        cors({
-            origin: "http://localhost:3000",
-            credentials: true,
-        })
-    );
-    app.use(
-        session({
-            name: COOKIE_NAME,
-            store: new RedisStore({ client: redis, disableTouch: true }),
-            cookie: {
-                maxAge: 1000 * 60 * 60 * 24 * 365 * 10, //10 years
-                httpOnly: true,
-                secure: __prod__,
-                sameSite: "lax",
-            },
-            saveUninitialized: false,
-            secret: "keyboard cat",
-            resave: false,
-        })
-    );
+	const apolloServer = new ApolloServer({
+		schema: await buildSchema({
+			resolvers: [HelloResolver, PostResolver, UserResolver],
+			validate: false,
+		}),
+		context: ({ req, res }): MyContext => ({
+			req,
+			res,
+			redis,
+			userLoader: createUserLoader(),
+			upvoteLoader: createUpvoteLoader(),
+		}),
+	});
+	apolloServer.applyMiddleware({ app, cors: false });
 
-    const apolloServer = new ApolloServer({
-        schema: await buildSchema({
-            resolvers: [HelloResolver, PostResolver, UserResolver],
-            validate: false,
-        }),
-        context: ({ req, res }): MyContext => ({ req, res, redis }),
-    });
-    apolloServer.applyMiddleware({ app, cors: false });
-
-    app.listen(4000, () => {
-        console.log("server started on port 4000");
-    });
+	app.listen(parseInt(process.env.PORT), () => {
+		console.log(`server started on port ${process.env.PORT}`);
+	});
 };
 
 main();

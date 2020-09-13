@@ -1,7 +1,6 @@
 import React from "react";
 import { Flex, IconButton } from "@chakra-ui/core";
 import {
-	PostsQuery,
 	PostSnippetFragment,
 	useVoteMutation,
 } from "../generated/graphql";
